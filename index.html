@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Livarix AI — Cancer Detection & Reporting</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<!-- pdfmake for client-side PDF (no backend WeasyPrint needed) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<style>
+/* ═══════════════════ TOKENS ═══════════════════ */
+:root{
+  --bg:#07090d;--bg2:#0d1117;--bg3:#131a22;--surf:#1a2232;--surf2:#1e2a3d;
+  --brd:rgba(255,255,255,.06);--brd2:rgba(255,255,255,.12);
+  --text:#e2e8f4;--muted:#5e7291;--muted2:#8ba0ba;
+  --G:#10b981;--G2:#34d399;--Gd:#064e3b;
+  --B:#3b82f6;--B2:#93c5fd;--Bd:#0f1f3d;
+  --gold:#f59e0b;--red:#ef4444;
+  --font:'DM Sans',sans-serif;
+  --syne:'Syne',sans-serif;
+  --mono:'DM Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font);overflow-x:hidden}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--surf2);border-radius:2px}
+
+/* ═══════════════════ LOGIN ═══════════════════ */
+#pg-login{
+  min-height:100vh;display:flex;
+  background:var(--bg);position:relative;overflow:hidden;
+}
+.l-bg{position:absolute;inset:0;pointer-events:none}
+.l-bg-blob{position:absolute;border-radius:50%;filter:blur(100px)}
+.b1{width:500px;height:500px;background:rgba(16,185,129,.06);top:-150px;right:-100px}
+.b2{width:400px;height:400px;background:rgba(59,130,246,.05);bottom:-100px;left:-80px}
+.b3{width:300px;height:300px;background:rgba(245,158,11,.03);top:40%;left:40%}
+
+.l-left{
+  width:480px;flex-shrink:0;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:60px 56px;
+  background:linear-gradient(135deg,rgba(16,185,129,.05),rgba(59,130,246,.03));
+  border-right:1px solid var(--brd);position:relative;z-index:1;
+}
+@media(max-width:900px){.l-left{display:none}}
+.l-logo{display:flex;align-items:center;gap:14px;margin-bottom:32px}
+.l-logo-icon{width:56px;height:56px;background:linear-gradient(135deg,var(--G),var(--B));border-radius:14px;display:flex;align-items:center;justify-content:center}
+.l-brand-name{font-family:var(--syne);font-size:28px;font-weight:800;letter-spacing:.02em}
+.l-brand-name b{color:var(--G)}
+.l-tagline{font-size:14px;color:var(--muted2);margin-bottom:40px;line-height:1.6}
+.l-feats{display:flex;flex-direction:column;gap:14px;margin-bottom:48px}
+.l-feat{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--muted2)}
+.l-feat-dot{width:8px;height:8px;border-radius:50%;background:var(--G);flex-shrink:0}
+.l-feat span{font-weight:500;color:var(--text)}
+
+/* founders strip on login */
+.l-founders{display:flex;flex-direction:column;gap:10px;margin-top:auto;padding-top:32px;border-top:1px solid var(--brd)}
+.l-fnd{display:flex;align-items:center;gap:12px}
+.l-av{width:38px;height:38px;border-radius:50%;overflow:hidden;border:2px solid var(--brd2);flex-shrink:0}
+.l-av img{width:100%;height:100%;object-fit:cover}
+.l-av-ph{width:100%;height:100%;background:linear-gradient(135deg,var(--Gd),var(--Bd));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--G2)}
+.l-fn{font-size:12px;font-weight:500}
+.l-fr{font-size:10px;color:var(--muted2)}
+
+.l-right{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  padding:40px;position:relative;z-index:1;
+}
+.l-card{
+  width:100%;max-width:400px;
+  background:var(--bg2);border:1px solid var(--brd2);
+  border-radius:20px;padding:40px;
+  box-shadow:0 24px 64px rgba(0,0,0,.5);
+}
+.l-card h2{font-family:var(--syne);font-size:24px;font-weight:700;margin-bottom:6px}
+.l-card-sub{font-size:13px;color:var(--muted2);margin-bottom:28px}
+.l-label{font-size:11px;color:var(--muted2);margin-bottom:5px;letter-spacing:.05em;text-transform:uppercase}
+.l-input{width:100%;background:var(--bg3);border:1px solid var(--brd2);border-radius:9px;padding:12px 14px;font-size:14px;font-family:var(--font);color:var(--text);outline:none;transition:border-color .15s;margin-bottom:14px}
+.l-input:focus{border-color:var(--G)}
+.l-submit{width:100%;padding:13px;background:linear-gradient(135deg,var(--G),#059669);border:none;border-radius:9px;color:#fff;font-family:var(--syne);font-size:15px;font-weight:700;cursor:pointer;transition:opacity .2s,transform .1s;margin-top:4px;letter-spacing:.02em}
+.l-submit:hover{opacity:.88}.l-submit:active{transform:scale(.98)}
+.l-err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#fca5a5;margin-bottom:12px;display:none}
+.l-hint{margin-top:20px;text-align:center;font-size:11px;color:var(--muted);background:var(--bg3);border-radius:8px;padding:12px}
+.l-hint code{background:rgba(16,185,129,.15);color:var(--G2);padding:1px 6px;border-radius:4px;font-family:var(--mono)}
+.l-hfbar{margin-top:14px;text-align:center;font-size:11px;color:var(--muted);font-family:var(--mono);padding:9px;background:var(--bg3);border-radius:8px;border:1px solid var(--brd)}
+
+/* ═══════════════════ APP ═══════════════════ */
+#pg-app{display:none;min-height:100vh;flex-direction:column}
+
+/* Topnav */
+.topnav{
+  height:58px;background:rgba(7,9,13,.92);border-bottom:1px solid var(--brd);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;position:sticky;top:0;z-index:100;backdrop-filter:blur(16px);
+}
+.nav-logo{display:flex;align-items:center;gap:10px;font-family:var(--syne);font-size:18px;font-weight:700}
+.nav-logo b{color:var(--G)}
+.nav-tabs{display:flex;gap:0}
+.ntab{background:none;border:none;color:var(--muted);font-family:var(--font);font-size:13px;font-weight:500;padding:0 16px;height:58px;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+.ntab:hover{color:var(--text)}
+.ntab.on{color:var(--G);border-bottom-color:var(--G)}
+.nav-right{display:flex;align-items:center;gap:10px}
+.plan-badge-nav{font-size:10px;font-family:var(--mono);padding:3px 8px;border-radius:4px}
+.plan-badge-nav.premium{background:rgba(245,158,11,.15);color:var(--gold);border:1px solid rgba(245,158,11,.3)}
+.plan-badge-nav.free{background:var(--surf);color:var(--muted2);border:1px solid var(--brd)}
+.btn-logout{background:none;border:1px solid var(--brd2);border-radius:7px;color:var(--muted2);font-family:var(--font);font-size:12px;padding:6px 12px;cursor:pointer;transition:all .15s}
+.btn-logout:hover{border-color:var(--red);color:var(--red)}
+.nav-user{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted2)}
+.nav-av{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--G),var(--B));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff}
+
+/* Tabs */
+.tab{display:none;flex-direction:column;flex:1}
+.tab.on{display:flex}
+
+/* ─── SCAN TAB ─── */
+.scan-hero{
+  background:linear-gradient(135deg,rgba(16,185,129,.06),rgba(59,130,246,.04));
+  border-bottom:1px solid var(--brd);
+  padding:40px 40px 32px;text-align:center;
+}
+.scan-hero h2{font-family:var(--syne);font-size:28px;font-weight:800;margin-bottom:8px}
+.scan-hero h2 span.g{color:var(--G)}
+.scan-hero h2 span.b{color:var(--B)}
+.scan-hero p{font-size:14px;color:var(--muted2)}
+
+.type-row{display:flex;gap:16px;padding:28px 40px;justify-content:center}
+.type-card{
+  flex:1;max-width:380px;background:var(--bg2);border:2px solid var(--brd);
+  border-radius:16px;padding:24px;cursor:pointer;transition:all .2s;
+  position:relative;overflow:hidden;
+}
+.type-card::before{content:'';position:absolute;inset:0;opacity:0;transition:opacity .2s}
+.type-card.lung-card::before{background:linear-gradient(135deg,rgba(59,130,246,.08),transparent)}
+.type-card.liver-card::before{background:linear-gradient(135deg,rgba(16,185,129,.08),transparent)}
+.type-card:hover{transform:translateY(-2px)}
+.type-card:hover::before{opacity:1}
+.type-card.sel-lung{border-color:var(--B);background:rgba(59,130,246,.06)}
+.type-card.sel-liver{border-color:var(--G);background:rgba(16,185,129,.06)}
+.tc-icon{font-size:36px;margin-bottom:12px}
+.tc-name{font-family:var(--syne);font-size:18px;font-weight:700;margin-bottom:6px}
+.tc-desc{font-size:12px;color:var(--muted2);line-height:1.6;margin-bottom:14px}
+.tc-acc{display:inline-block;font-size:10px;font-family:var(--mono);padding:3px 9px;border-radius:20px}
+.lung-acc{background:rgba(59,130,246,.15);color:var(--B2)}
+.liver-acc{background:rgba(16,185,129,.15);color:var(--G2)}
+.tc-bar{position:absolute;bottom:0;left:0;right:0;height:3px}
+.lung-bar{background:linear-gradient(90deg,transparent,var(--B),transparent)}
+.liver-bar{background:linear-gradient(90deg,transparent,var(--G),transparent)}
+
+.main-area{display:flex;gap:24px;padding:0 40px 40px;flex:1}
+
+/* Form column */
+.form-col{
+  width:320px;flex-shrink:0;background:var(--bg2);border:1px solid var(--brd);
+  border-radius:16px;padding:22px;height:fit-content;
+  position:sticky;top:82px;
+}
+.fcol-title{font-family:var(--syne);font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted2);margin-bottom:14px}
+.fg{margin-bottom:12px}
+.fl{display:block;font-size:11px;color:var(--muted2);margin-bottom:4px;letter-spacing:.03em}
+.fi{width:100%;background:var(--bg3);border:1px solid var(--brd2);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font);color:var(--text);outline:none;transition:border-color .15s}
+.fi:focus{border-color:var(--G)}
+select.fi{cursor:pointer}
+textarea.fi{resize:none;height:60px;line-height:1.5}
+.frow2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* upload */
+.upzone{
+  border:1.5px dashed var(--brd2);border-radius:12px;padding:28px 16px;
+  text-align:center;cursor:pointer;transition:all .2s;
+  background:var(--bg3);margin-bottom:12px;
+}
+.upzone:hover,.upzone.dv{border-color:var(--G);background:rgba(16,185,129,.04)}
+.upzone input{display:none}
+.up-ic{font-size:28px;margin-bottom:8px;opacity:.4}
+.up-t{font-size:13px;font-weight:500;margin-bottom:3px}
+.up-s{font-size:10px;color:var(--muted);line-height:1.6}
+.up-fn{font-size:10px;font-family:var(--mono);color:var(--G);margin-top:6px;display:none}
+
+.btn-run{
+  width:100%;padding:13px;border:none;border-radius:9px;
+  color:#fff;font-family:var(--syne);font-size:15px;font-weight:700;
+  cursor:pointer;transition:opacity .2s,transform .1s;
+  margin-top:4px;letter-spacing:.02em;
+}
+.btn-run.lung{background:linear-gradient(135deg,var(--B),#1d4ed8)}
+.btn-run.liver{background:linear-gradient(135deg,var(--G),#059669)}
+.btn-run:hover{opacity:.88}.btn-run:active{transform:scale(.98)}
+.btn-run:disabled{opacity:.3;cursor:not-allowed}
+
+/* Results column */
+.res-col{flex:1;min-width:0}
+
+.empty-state{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:420px;gap:14px;text-align:center;
+  background:var(--bg2);border:1px solid var(--brd);border-radius:16px;padding:40px;
+}
+.es-ic{font-size:56px;opacity:.15}
+.es-t{font-family:var(--syne);font-size:22px;font-weight:700;color:var(--muted)}
+.es-s{font-size:13px;color:var(--muted);max-width:360px;line-height:1.7;opacity:.7}
+.es-tags{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px}
+.etag{font-size:10px;font-family:var(--mono);padding:3px 10px;border-radius:20px;border:1px solid var(--brd2);color:var(--muted)}
+.etag.g{border-color:rgba(16,185,129,.35);color:var(--G2)}
+.etag.b{border-color:rgba(59,130,246,.35);color:var(--B2)}
+
+/* loading */
+.loading-box{
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  height:420px;gap:18px;
+  background:var(--bg2);border:1px solid var(--brd);border-radius:16px;
+}
+.ld-ring{width:52px;height:52px;border-radius:50%;border:2px solid var(--brd2);animation:spin .75s linear infinite}
+.ld-ring.lung{border-top-color:var(--B)}
+.ld-ring.liver{border-top-color:var(--G)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ld-step{font-size:12px;font-family:var(--mono);color:var(--G2)}
+
+/* result blocks */
+.result-box{display:none}
+
+/* risk banner */
+.risk-banner{border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:12px;margin-bottom:16px;border:1px solid}
+.risk-banner.HIGH{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.3)}
+.risk-banner.MODERATE{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.3)}
+.risk-banner.LOW{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.3)}
+.r-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.risk-banner.HIGH .r-dot{background:var(--red)}
+.risk-banner.MODERATE .r-dot{background:var(--gold)}
+.risk-banner.LOW .r-dot{background:var(--G)}
+.r-txt{font-size:13px;font-weight:500}
+.risk-banner.HIGH .r-txt{color:#fca5a5}
+.risk-banner.MODERATE .r-txt{color:#fcd34d}
+.risk-banner.LOW .r-txt{color:var(--G2)}
+
+/* scan images grid */
+.scans-section{background:var(--bg2);border:1px solid var(--brd);border-radius:16px;padding:20px;margin-bottom:14px}
+.ss-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--brd)}
+.scans-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.scan-box{background:var(--bg3);border:1px solid var(--brd);border-radius:10px;overflow:hidden}
+.sb-lbl{padding:7px 12px;font-size:9px;font-weight:600;color:var(--muted2);text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--brd)}
+.scan-box img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;background:#000}
+.scan-na{aspect-ratio:4/3;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#000;gap:8px}
+.scan-na-ic{font-size:20px;opacity:.3}
+.scan-na-t{font-size:10px;color:#333;font-family:var(--mono)}
+.seg-leg{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px}
+.sl-i{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted2)}
+.sl-d{width:8px;height:8px;border-radius:2px}
+
+/* metrics */
+.metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.mcard{background:var(--bg2);border:1px solid var(--brd);border-radius:12px;padding:14px;text-align:center}
+.mv{font-size:22px;font-weight:700;margin-bottom:3px;font-family:var(--syne)}
+.ml{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+
+/* sections */
+.rsec{background:var(--bg2);border:1px solid var(--brd);border-radius:16px;padding:18px;margin-bottom:12px}
+.rs-t{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:13px;padding-bottom:8px;border-bottom:1px solid var(--brd)}
+.find-item{border-left:2px solid var(--G);padding:9px 13px;margin-bottom:8px;background:rgba(16,185,129,.04);border-radius:0 8px 8px 0}
+.find-item.lung{border-left-color:var(--B);background:rgba(59,130,246,.04)}
+.find-item.green{border-left-color:var(--G2);background:rgba(52,211,153,.04)}
+.fi-l{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--G);margin-bottom:3px}
+.find-item.lung .fi-l{color:var(--B2)}
+.find-item.green .fi-l{color:var(--G2)}
+.fi-t{font-size:12px;color:var(--text);line-height:1.7}
+
+/* conf bars */
+.cbar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.cbar-n{font-size:11px;font-family:var(--mono);color:var(--muted2);min-width:200px}
+.cbar-t{flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.cbar-f{height:100%;border-radius:3px;transition:width 1.2s ease}
+.cbar-p{font-size:10px;color:var(--muted);min-width:38px;text-align:right;font-family:var(--mono)}
+
+/* staging */
+.stbl{width:100%;border-collapse:collapse;font-size:12px}
+.stbl th{background:var(--bg3);color:var(--muted2);padding:8px 11px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--brd)}
+.stbl td{padding:9px 11px;border-bottom:1px solid var(--brd);color:var(--text)}
+.stbl tr.fr td{background:rgba(16,185,129,.05);font-weight:600}
+.sbadge{display:inline-block;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;color:#fff;font-family:var(--syne)}
+
+/* reco */
+.rtbl{width:100%;border-collapse:collapse;font-size:11px}
+.rtbl th{background:var(--bg3);color:var(--muted2);padding:7px 11px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--brd)}
+.rtbl td{padding:8px 11px;border-bottom:1px solid var(--brd);color:var(--text);vertical-align:top}
+.p1{color:#f87171;font-weight:600}.p2{color:#fbbf24;font-weight:600}.p3{color:var(--G2);font-weight:600}
+
+/* nutrition */
+.ngrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ncard{background:var(--bg3);border:1px solid var(--brd);border-radius:10px;padding:12px}
+.nh{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.ni{font-size:11px;color:var(--muted2);margin-bottom:4px;display:flex;gap:6px;line-height:1.5}
+
+/* PDF button */
+.pdf-btn{
+  display:inline-flex;align-items:center;gap:8px;padding:11px 20px;
+  border-radius:9px;font-family:var(--syne);font-size:13px;font-weight:700;
+  cursor:pointer;transition:all .15s;border:none;letter-spacing:.02em;
+}
+.pdf-btn.liver{background:linear-gradient(135deg,var(--G),#059669);color:#fff}
+.pdf-btn.lung{background:linear-gradient(135deg,var(--B),#1d4ed8);color:#fff}
+.pdf-btn:hover{opacity:.88}.pdf-btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ═══════════════════ ABOUT TAB ═══════════════════ */
+.about-wrap{padding:0 40px 80px}
+.about-hero-band{
+  background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(59,130,246,.06));
+  border-bottom:1px solid var(--brd);
+  padding:48px 40px;text-align:center;
+}
+.ah-logo{margin:0 auto 16px;width:72px;height:72px}
+.ah-title{font-family:var(--syne);font-size:32px;font-weight:800;margin-bottom:6px}
+.ah-title b{color:var(--G)}
+.ah-sub{font-size:14px;color:var(--muted2);margin-bottom:18px}
+.ah-desc{font-size:13px;color:var(--muted2);max-width:600px;margin:0 auto;line-height:1.8}
+
+.abt-section{margin-top:40px}
+.abt-section h3{font-family:var(--syne);font-size:16px;font-weight:700;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.abt-section h3::after{content:'';flex:1;height:1px;background:var(--brd)}
+
+/* Tech chips */
+.tech-grid{display:flex;flex-wrap:wrap;gap:8px}
+.tech-chip{background:var(--bg2);border:1px solid var(--brd2);border-radius:8px;padding:7px 14px;font-size:12px;font-weight:500;color:var(--muted2)}
+
+/* Disclaimer */
+.disclaimer-box{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:14px 18px;font-size:12px;color:#fcd34d;line-height:1.7;margin-top:32px}
+
+/* ── FOUNDERS SECTION (full cutout at bottom) ── */
+.founders-section{margin-top:48px}
+.founders-section h3{font-family:var(--syne);font-size:20px;font-weight:800;margin-bottom:32px;text-align:center;letter-spacing:.02em}
+.founders-section h3 span{color:var(--G)}
+
+.founders-cards{display:grid;grid-template-columns:1fr 1fr;gap:32px;max-width:900px;margin:0 auto}
+
+.founder-card{
+  background:var(--bg2);border:1px solid var(--brd2);border-radius:20px;
+  overflow:hidden;display:flex;flex-direction:column;
+  transition:transform .2s,border-color .2s;
+}
+.founder-card:hover{transform:translateY(-4px)}
+.founder-card.f1{border-color:rgba(16,185,129,.3)}
+.founder-card.f2{border-color:rgba(59,130,246,.3)}
+.founder-card.f1:hover{border-color:var(--G)}
+.founder-card.f2:hover{border-color:var(--B)}
+
+/* Full cutout photo */
+.founder-photo{
+  width:100%;aspect-ratio:3/4;overflow:hidden;
+  background:linear-gradient(135deg,var(--bg3),var(--surf));
+  position:relative;
+}
+.founder-photo img{
+  width:100%;height:100%;object-fit:cover;object-position:center top;
+  display:block;
+}
+.founder-photo-ph{
+  width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:12px;
+}
+.founder-photo-ph .ph-init{
+  width:80px;height:80px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--syne);font-size:28px;font-weight:800;color:#fff;
+}
+.f1 .ph-init{background:linear-gradient(135deg,var(--G),#059669)}
+.f2 .ph-init{background:linear-gradient(135deg,var(--B),#1d4ed8)}
+.founder-photo-ph .ph-name{font-size:14px;color:var(--muted2)}
+
+/* gradient overlay on photo */
+.founder-photo::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:40%;
+  background:linear-gradient(to top,var(--bg2),transparent);
+}
+
+.founder-info{padding:22px 22px 26px;flex:1}
+.fi-name{font-family:var(--syne);font-size:18px;font-weight:800;margin-bottom:4px}
+.f1 .fi-name{color:var(--G2)}
+.f2 .fi-name{color:var(--B2)}
+.fi-role{font-size:12px;color:var(--muted2);margin-bottom:16px;font-weight:500;letter-spacing:.02em}
+.fi-role-badge{display:inline-block;font-size:10px;font-family:var(--mono);padding:3px 9px;border-radius:20px;margin-bottom:14px}
+.f1 .fi-role-badge{background:rgba(16,185,129,.15);color:var(--G2)}
+.f2 .fi-role-badge{background:rgba(59,130,246,.15);color:var(--B2)}
+.fi-desc{font-size:12px;color:var(--muted2);line-height:1.7;margin-bottom:14px}
+.fi-tags{display:flex;flex-wrap:wrap;gap:6px}
+.fi-tag{font-size:10px;padding:3px 9px;border-radius:6px;background:var(--bg3);border:1px solid var(--brd);color:var(--muted2)}
+.fi-works{margin-top:14px}
+.fi-works-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
+.fi-work-item{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;font-size:11px;color:var(--muted2);line-height:1.5}
+.fi-work-item::before{content:'→';color:var(--G);font-size:10px;margin-top:1px;flex-shrink:0}
+.f2 .fi-work-item::before{color:var(--B2)}
+
+/* ═══════════════════ TOAST ═══════════════════ */
+.toast{position:fixed;bottom:22px;right:22px;z-index:9999;background:var(--surf);border:1px solid var(--brd2);border-radius:12px;padding:12px 17px;font-size:12px;color:var(--text);display:none;align-items:center;gap:10px;max-width:320px;box-shadow:0 8px 32px rgba(0,0,0,.5);animation:sup .3s ease}
+.toast.on{display:flex}
+@keyframes sup{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ LOGIN ══════════════════ -->
+<div id="pg-login">
+  <div class="l-bg">
+    <div class="l-bg-blob b1"></div>
+    <div class="l-bg-blob b2"></div>
+    <div class="l-bg-blob b3"></div>
+  </div>
+
+  <!-- Left panel -->
+  <div class="l-left">
+    <div class="l-logo">
+      <div class="l-logo-icon">
+        <svg viewBox="0 0 38 38" fill="none" width="28" height="28">
+          <path d="M19 5C14 5 10 9 10 14L10 29C10 32 12 34 14.5 34C17 34 19 32 19 29L19 15" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M19 5C24 5 28 9 28 14L28 29C28 32 26 34 23.5 34C21 34 19 32 19 29L19 15" stroke="rgba(255,255,255,.7)" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="19" cy="5" r="3" fill="white"/>
+          <path d="M12 21L16 21M22 21L26 21" stroke="rgba(255,255,255,.5)" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="l-brand-name">LIVARIX <b>AI</b></div>
+      </div>
+    </div>
+    <div class="l-tagline">AI-powered cancer detection &amp; clinical reporting platform</div>
+    <div class="l-feats">
+      <div class="l-feat"><div class="l-feat-dot"></div><span>Liver CT</span> — HCC, Metastasis, CCA</div>
+      <div class="l-feat"><div class="l-feat-dot" style="background:var(--B)"></div><span>Lung CT</span> — NSCLC, Nodule, GGO</div>
+      <div class="l-feat"><div class="l-feat-dot" style="background:var(--gold)"></div><span>PDF Reports</span> — clinical-grade, instant download</div>
+      <div class="l-feat"><div class="l-feat-dot" style="background:#a78bfa"></div><span>AI Annotations</span> — Grad-CAM, segmentation maps</div>
+    </div>
+    <div class="l-founders">
+      <div class="l-fnd">
+        <div class="l-av">
+          <img src="founder1.jpg" alt="Ashvant"
+               onerror="this.style.display='none';this.nextSibling.style.display='flex'">
+          <div class="l-av-ph" style="display:none">AY</div>
+        </div>
+        <div>
+          <div class="l-fn">Ashvant Narayan Y</div>
+          <div class="l-fr">Founder · AI/ML Engineer</div>
+        </div>
+      </div>
+      <div class="l-fnd">
+        <div class="l-av">
+          <img src="founder2.jpg" alt="Dhivesh"
+               onerror="this.style.display='none';this.nextSibling.style.display='flex'">
+          <div class="l-av-ph" style="display:none;background:linear-gradient(135deg,var(--Bd),var(--B))">DY</div>
+        </div>
+        <div>
+          <div class="l-fn">Dhivesh Y S</div>
+          <div class="l-fr">Co-founder · Business Analyst</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right panel (login form) -->
+  <div class="l-right">
+    <div class="l-card">
+      <h2>Sign In</h2>
+      <div class="l-card-sub">Access Livarix AI diagnostic platform</div>
+      <div class="l-err" id="l-err">Invalid credentials. Try ID: 123 / Password: 123</div>
+      <div><div class="l-label">User ID</div>
+        <input type="text" class="l-input" id="l-u" placeholder="Enter User ID" value="123"></div>
+      <div><div class="l-label">Password</div>
+        <input type="password" class="l-input" id="l-p" placeholder="Enter password" value="123"></div>
+      <button class="l-submit" id="l-btn" onclick="doLogin()">Sign In →</button>
+      <div class="l-hint">Demo: ID <code>123</code> · Password <code>123</code><br>Accesses both Free &amp; Premium</div>
+      <div class="l-hfbar" id="hf-bar">Connecting to AI backend…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ MAIN APP ══════════════════ -->
+<div id="pg-app" style="display:none;flex-direction:column">
+
+  <!-- Topnav -->
+  <nav class="topnav">
+    <div class="nav-logo">
+      <svg viewBox="0 0 32 32" fill="none" width="26" height="26">
+        <path d="M16 4C12 4 9 7 9 11L9 23C9 25.5 10.5 27 12.5 27C14.5 27 16 25.5 16 23L16 12" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        <path d="M16 4C20 4 23 7 23 11L23 23C23 25.5 21.5 27 19.5 27C17.5 27 16 25.5 16 23L16 12" stroke="rgba(255,255,255,.6)" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="16" cy="4" r="2.5" fill="white"/>
+      </svg>
+      LIVARIX <strong style="color:var(--G)">AI</strong>
+    </div>
+    <div class="nav-tabs">
+      <button class="ntab on" onclick="showTab('scan')" id="tab-scan">🔬 New Analysis</button>
+      <button class="ntab" onclick="showTab('about')" id="tab-about">👥 About</button>
+    </div>
+    <div class="nav-right">
+      <span class="plan-badge-nav" id="nav-plan">Free</span>
+      <div class="nav-user"><div class="nav-av" id="nav-av">U</div><span id="nav-un">User</span></div>
+      <button class="btn-logout" onclick="doLogout()">Logout</button>
+    </div>
+  </nav>
+
+  <!-- ──── SCAN TAB ──── -->
+  <div class="tab on" id="tab-scan-content">
+
+    <div class="scan-hero">
+      <h2>AI Cancer Detection — <span class="g">Liver</span> &amp; <span class="b">Lung</span></h2>
+      <p>Upload a CT scan · Fill patient info · Get AI analysis + PDF report in seconds</p>
+    </div>
+
+    <!-- Cancer type selection -->
+    <div class="type-row" id="type-row">
+      <div class="type-card liver-card" id="tc-liver" onclick="selectType('liver')">
+        <div class="tc-icon">🩺</div>
+        <div class="tc-name">Liver CT</div>
+        <div class="tc-desc">Hepatocellular carcinoma, liver metastasis, cholangiocarcinoma detection via CT segmentation</div>
+        <span class="tc-acc liver-acc">SegResNet · LiTS Dataset</span>
+        <div class="tc-bar liver-bar"></div>
+      </div>
+      <div class="type-card lung-card" id="tc-lung" onclick="selectType('lung')">
+        <div class="tc-icon">🫁</div>
+        <div class="tc-name">Lung CT</div>
+        <div class="tc-desc">NSCLC, pulmonary nodule malignancy scoring, Lung-RADS classification via 3D CNN</div>
+        <span class="tc-acc lung-acc">3D CNN · LIDC-IDRI Dataset</span>
+        <div class="tc-bar lung-bar"></div>
+      </div>
+    </div>
+
+    <!-- Main analysis area -->
+    <div class="main-area" id="main-area" style="display:none">
+
+      <!-- Form column -->
+      <div class="form-col">
+        <div class="fcol-title" id="fcol-type-label">Liver CT Analysis</div>
+
+        <div class="fcol-title" style="margin-top:16px">Upload scan</div>
+        <div class="upzone" id="upz" onclick="document.getElementById('fi').click()">
+          <input type="file" id="fi" accept=".nii,.nii.gz,.dcm,.png,.jpg,.jpeg,.tif,.tiff">
+          <div class="up-ic">📂</div>
+          <div class="up-t">Drop or click to upload</div>
+          <div class="up-s">NIfTI (.nii.gz) for CT<br>PNG / JPG accepted</div>
+          <div class="up-fn" id="up-fn"></div>
+        </div>
+
+        <div class="fcol-title">Patient information</div>
+        <div class="fg"><label class="fl">Full name</label><input type="text" class="fi" id="f-n" placeholder="e.g. Ravi Kumar S."></div>
+        <div class="frow2">
+          <div class="fg"><label class="fl">Age</label><input type="number" class="fi" id="f-a" placeholder="54"></div>
+          <div class="fg"><label class="fl">Sex</label>
+            <select class="fi" id="f-s"><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select></div>
+        </div>
+        <div class="fg"><label class="fl">MRN / Patient ID</label><input type="text" class="fi" id="f-m" placeholder="APL-CHN-000001"></div>
+        <div class="fg"><label class="fl">Referring doctor</label><input type="text" class="fi" id="f-r" placeholder="Dr. Name, Speciality"></div>
+        <div class="fg"><label class="fl">Clinical history</label><textarea class="fi" id="f-h" placeholder="Brief clinical notes…"></textarea></div>
+
+        <button class="btn-run liver" id="btn-run" onclick="runAnalysis()" disabled>
+          Run AI Analysis
+        </button>
+        <button style="width:100%;margin-top:8px;padding:9px;background:none;border:1px solid var(--brd);border-radius:8px;color:var(--muted2);font-family:var(--font);font-size:12px;cursor:pointer" onclick="changeType()">
+          ← Change cancer type
+        </button>
+      </div>
+
+      <!-- Results column -->
+      <div class="res-col">
+        <div class="empty-state" id="st-empty">
+          <div class="es-ic">🩻</div>
+          <div class="es-t">Ready for Analysis</div>
+          <div class="es-s">Upload a scan file, fill patient information, then click Run AI Analysis.</div>
+          <div class="es-tags">
+            <span class="etag g">HCC</span>
+            <span class="etag g">Liver metastasis</span>
+            <span class="etag g">CCA</span>
+            <span class="etag b">NSCLC</span>
+            <span class="etag b">Lung nodule</span>
+            <span class="etag b">GGO</span>
+          </div>
+        </div>
+
+        <div class="loading-box" id="st-ldg">
+          <div class="ld-ring liver" id="ld-ring"></div>
+          <div class="ld-step" id="ld-step">Preprocessing image…</div>
+        </div>
+
+        <div class="result-box" id="st-res"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ──── ABOUT TAB ──── -->
+  <div class="tab" id="tab-about-content">
+    <div class="about-hero-band">
+      <div class="ah-logo">
+        <svg viewBox="0 0 80 80" fill="none" width="72" height="72">
+          <path d="M40 12C40 12 30 14 24 22C18 30 16 40 18 50C20 58 26 64 32 64C36 64 38 60 38 56L38 30C38 28 39 26 40 26C41 26 42 28 42 30L42 56C42 60 44 64 48 64C54 64 60 58 62 50C64 40 62 30 56 22C50 14 40 12 40 12Z" fill="url(#abl2)"/>
+          <circle cx="58" cy="22" r="10" fill="#0369A1"/>
+          <polyline points="53,22 57,26 64,18" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <defs><linearGradient id="abl2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0EA5E9"/><stop offset="100%" stop-color="#0D9488"/></linearGradient></defs>
+        </svg>
+      </div>
+      <div class="ah-title">LIVARIX <b>AI</b></div>
+      <div class="ah-sub">AI Cancer Detection &amp; Reporting Platform · v1.0</div>
+      <div class="ah-desc">Livarix AI uses state-of-the-art deep learning models trained on thousands of medical scans to assist clinicians with early cancer detection and reporting. Currently supporting lung and liver cancer detection with more types coming soon.</div>
+    </div>
+
+    <div class="about-wrap">
+      <div class="abt-section">
+        <h3>Technology Stack</h3>
+        <div class="tech-grid">
+          <div class="tech-chip">PyTorch 2.2</div>
+          <div class="tech-chip">MONAI 1.3</div>
+          <div class="tech-chip">SegResNet</div>
+          <div class="tech-chip">3D CNN</div>
+          <div class="tech-chip">FastAPI</div>
+          <div class="tech-chip">HuggingFace Spaces</div>
+          <div class="tech-chip">Vercel</div>
+          <div class="tech-chip">pdfmake</div>
+          <div class="tech-chip">LiTS Dataset</div>
+          <div class="tech-chip">LIDC-IDRI</div>
+        </div>
+      </div>
+
+      <!-- ═══ FOUNDERS — FULL CUTOUT PHOTOS ═══ -->
+      <div class="founders-section">
+        <h3>Meet the Team — <span>Livarix AI</span></h3>
+        <div class="founders-cards">
+
+          <!-- Founder 1: Ashvant -->
+          <div class="founder-card f1">
+            <div class="founder-photo">
+              <img src="founder1.jpg" alt="Ashvant Narayan Y"
+                   onerror="this.style.display='none';this.nextSibling.style.display='flex'">
+              <div class="founder-photo-ph" style="display:none">
+                <div class="ph-init">AY</div>
+                <div class="ph-name">Photo unavailable</div>
+              </div>
+            </div>
+            <div class="founder-info">
+              <div class="fi-name">Ashvant Narayan Y</div>
+              <div class="fi-role">Founder &amp; Lead AI Engineer</div>
+              <span class="fi-role-badge">AI / ML Engineer</span>
+              <div class="fi-desc">Leads the full AI pipeline at Livarix — from dataset curation and model training to backend API deployment and clinical integration.</div>
+              <div class="fi-works">
+                <div class="fi-works-title">Key contributions</div>
+                <div class="fi-work-item">Trained SegResNet on LiTS (131 CT volumes) for liver tumour segmentation — Dice 0.883</div>
+                <div class="fi-work-item">Built 3D CNN on LIDC-IDRI (1,018 CT scans) for lung nodule malignancy scoring</div>
+                <div class="fi-work-item">Designed FastAPI backend with HuggingFace Spaces deployment</div>
+                <div class="fi-work-item">Implemented Grad-CAM annotation + clinical PDF report generation</div>
+              </div>
+              <div class="fi-tags">
+                <span class="fi-tag">Deep Learning</span>
+                <span class="fi-tag">Medical Imaging</span>
+                <span class="fi-tag">PyTorch</span>
+                <span class="fi-tag">MONAI</span>
+                <span class="fi-tag">FastAPI</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Founder 2: Dhivesh -->
+          <div class="founder-card f2">
+            <div class="founder-photo">
+              <img src="founder2.jpg" alt="Dhivesh Y S"
+                   onerror="this.style.display='none';this.nextSibling.style.display='flex'">
+              <div class="founder-photo-ph" style="display:none">
+                <div class="ph-init">DY</div>
+                <div class="ph-name">Photo unavailable</div>
+              </div>
+            </div>
+            <div class="founder-info">
+              <div class="fi-name">Dhivesh Y S</div>
+              <div class="fi-role">Co-founder &amp; Business Analyst</div>
+              <span class="fi-role-badge">Business Analyst</span>
+              <div class="fi-desc">Drives the business strategy, product roadmap, healthcare partnerships, and go-to-market planning for Livarix AI.</div>
+              <div class="fi-works">
+                <div class="fi-works-title">Key contributions</div>
+                <div class="fi-work-item">Defined product vision and clinical workflow for the diagnostic platform</div>
+                <div class="fi-work-item">Conducted market research on AI diagnostics in India and Southeast Asia</div>
+                <div class="fi-work-item">Built the Free vs Premium plan structure and monetisation strategy</div>
+                <div class="fi-work-item">Manages hospital outreach and partnership development with clinicians</div>
+              </div>
+              <div class="fi-tags">
+                <span class="fi-tag">Business Strategy</span>
+                <span class="fi-tag">Healthcare</span>
+                <span class="fi-tag">Analytics</span>
+                <span class="fi-tag">Product</span>
+                <span class="fi-tag">Partnerships</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="disclaimer-box">
+        <strong>⚠️ Medical Disclaimer:</strong> Livarix AI is an AI-assisted diagnostic aid and is NOT a substitute for professional medical judgment. All AI findings must be reviewed and validated by a qualified radiologist or clinician before any clinical decision is made.
+      </div>
+    </div>
+  </div>
+
+</div><!-- end pg-app -->
+
+<div class="toast" id="toast">
+  <span id="t-ic" style="flex-shrink:0"></span>
+  <span id="t-msg"></span>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════
+   CONFIG — update this URL when HF Space is running
+   Go to: huggingface.co/spaces/2k22cse013/oncoscan-api
+   Click "App" tab → copy the URL shown there
+════════════════════════════════════════════════════ */
+const API = 'https://2k22cse013-oncoscan-api.hf.space';
+
+const USERS = {
+  '123': { password:'123', plan:'premium', name:'Ashvant Narayan Y' },
+  'free':{ password:'free', plan:'free',    name:'Demo User' },
+};
+
+let S = { user:null, plan:'free', type:'liver', file:null, result:null };
+
+/* ── Startup ── */
+window.addEventListener('load', () => {
+  pingBackend();
+  // drag-drop setup
+  const upz = document.getElementById('upz');
+  upz.addEventListener('dragover', e=>{e.preventDefault();upz.classList.add('dv')});
+  upz.addEventListener('dragleave', ()=>upz.classList.remove('dv'));
+  upz.addEventListener('drop', e=>{
+    e.preventDefault(); upz.classList.remove('dv');
+    const f=e.dataTransfer.files[0]; if(f){setFile(f);}
+  });
+  document.getElementById('fi').addEventListener('change', e=>{
+    if(e.target.files[0]) setFile(e.target.files[0]);
+  });
+  document.addEventListener('keydown', e=>{
+    if(e.key==='Enter' && document.getElementById('pg-login').style.display!=='none') doLogin();
+  });
+});
+
+async function pingBackend() {
+  const el = document.getElementById('hf-bar');
+  try {
+    const r = await fetch(API+'/api/health', {signal:AbortSignal.timeout(12000)});
+    const d = await r.json();
+    const n = (d.models||[]).length;
+    el.textContent = n>0 ? `✓ Backend online · ${n} model${n!==1?'s':''} loaded` : '⚠ Backend online but no models loaded';
+    el.style.color = n>0 ? 'var(--G2)' : 'var(--gold)';
+  } catch {
+    el.textContent = '⚠ HF Space starting up (cold start ~30s) — refresh in a moment';
+    el.style.color = 'var(--gold)';
+  }
+}
+
+/* ── Login ── */
+async function doLogin() {
+  const u = document.getElementById('l-u').value.trim();
+  const p = document.getElementById('l-p').value.trim();
+  const err = document.getElementById('l-err');
+  const btn = document.getElementById('l-btn');
+  err.style.display = 'none';
+  btn.textContent = 'Signing in…';
+
+  // Try backend first
+  try {
+    const res = await fetch(API+'/api/login',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:u,password:p}),
+      signal:AbortSignal.timeout(8000),
+    });
+    if(res.ok){
+      const d = await res.json();
+      enterApp(d.name, d.plan);
+      return;
+    }
+  } catch {}
+
+  // Fallback: check local USERS dict (works even if backend is down)
+  const localUser = USERS[u];
+  if(localUser && localUser.password === p){
+    enterApp(localUser.name, localUser.plan);
+    return;
+  }
+
+  err.style.display = 'block';
+  btn.textContent = 'Sign In →';
+}
+
+function enterApp(name, plan) {
+  S.user = name; S.plan = plan;
+  document.getElementById('pg-login').style.display = 'none';
+  document.getElementById('pg-app').style.display = 'flex';
+  // Populate nav
+  const init = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('nav-av').textContent = init;
+  document.getElementById('nav-un').textContent = name;
+  const pl = document.getElementById('nav-plan');
+  pl.textContent = plan.charAt(0).toUpperCase()+plan.slice(1);
+  pl.className = `plan-badge-nav ${plan}`;
+  checkHealth();
+}
+
+async function checkHealth() {
+  try {
+    const r = await fetch(API+'/api/health');
+    const d = await r.json();
+    const m = d.models||[];
+    if(m.length>0) toast(`✓ ${m.length} AI model${m.length!==1?'s':''} loaded: ${m.join(', ')}`,'success');
+    else toast('⚠ Models not loaded — check HF Space secrets (HF_TOKEN, MODEL_REPO)','warn');
+  } catch { toast('Backend starting up — may take 30s on first load','warn'); }
+}
+
+function doLogout() {
+  S = {user:null,plan:'free',type:'liver',file:null,result:null};
+  document.getElementById('pg-app').style.display = 'none';
+  document.getElementById('pg-login').style.display = 'flex';
+  document.getElementById('l-btn').textContent = 'Sign In →';
+  showEmpty();
+}
+
+/* ── Tabs ── */
+function showTab(t) {
+  document.querySelectorAll('.tab').forEach(el=>el.classList.remove('on'));
+  document.querySelectorAll('.ntab').forEach(el=>el.classList.remove('on'));
+  document.getElementById(`tab-${t}-content`).classList.add('on');
+  document.getElementById(`tab-${t}`).classList.add('on');
+}
+
+/* ── Cancer type ── */
+function selectType(type) {
+  S.type = type;
+  document.getElementById('type-row').style.display = 'none';
+  document.getElementById('main-area').style.display = 'flex';
+  // Update labels and colours
+  const isLiver = type==='liver';
+  document.getElementById('fcol-type-label').textContent = isLiver ? 'Liver CT Analysis' : 'Lung CT Analysis';
+  document.getElementById('fcol-type-label').style.color = isLiver ? 'var(--G2)' : 'var(--B2)';
+  const btn = document.getElementById('btn-run');
+  btn.className = `btn-run ${type}`;
+  btn.textContent = `Run ${isLiver?'Liver':'Lung'} AI Analysis`;
+  if(!S.file) btn.disabled = true;
+  // Update loading ring
+  document.getElementById('ld-ring').className = `ld-ring ${type}`;
+  document.getElementById('ld-step').style.color = isLiver ? 'var(--G2)' : 'var(--B2)';
+}
+
+function changeType() {
+  S.type = 'liver'; S.file = null;
+  document.getElementById('type-row').style.display = 'flex';
+  document.getElementById('main-area').style.display = 'none';
+  document.getElementById('fi').value = '';
+  document.getElementById('up-fn').style.display = 'none';
+  document.querySelector('.up-t').textContent = 'Drop or click to upload';
+  document.getElementById('btn-run').disabled = true;
+  showEmpty();
+  // Remove selection highlight
+  document.querySelectorAll('.type-card').forEach(c=>{
+    c.className = c.className.replace(/sel-\w+/g,'').trim();
+  });
+}
+
+/* ── File handling ── */
+function setFile(f) {
+  S.file = f;
+  const fn = document.getElementById('up-fn');
+  fn.textContent = f.name; fn.style.display = 'block';
+  document.querySelector('.up-t').textContent = '✓ File ready';
+  document.getElementById('btn-run').disabled = false;
+}
+
+/* ── Run analysis ── */
+async function runAnalysis() {
+  if(!S.file){ toast('Upload a scan file first','warn'); return; }
+  showLoading();
+
+  const steps = [
+    'Preprocessing image…',
+    'Running AI model…',
+    'Computing segmentation…',
+    'Extracting clinical metrics…',
+    'Generating annotated images…',
+    'Finalising results…',
+  ];
+  let si = 0;
+  const stepEl = document.getElementById('ld-step');
+  const timer = setInterval(()=>{ if(si<steps.length-1){si++;stepEl.textContent=steps[si];} }, 1800);
+
+  const fd = new FormData();
+  fd.append('file',             S.file);
+  fd.append('modality',         S.type==='liver' ? 'liver_ct' : 'lung_ct');
+  fd.append('patient_name',     document.getElementById('f-n').value);
+  fd.append('patient_age',      document.getElementById('f-a').value);
+  fd.append('patient_sex',      document.getElementById('f-s').value);
+  fd.append('patient_mrn',      document.getElementById('f-m').value);
+  fd.append('referring_doctor', document.getElementById('f-r').value);
+  fd.append('clinical_history', document.getElementById('f-h').value);
+  fd.append('plan',             S.plan);
+
+  try {
+    const res = await fetch(API+'/api/analyze', {method:'POST', body:fd});
+    clearInterval(timer);
+    if(!res.ok){ const e=await res.json(); throw new Error(e.detail||'Analysis failed'); }
+    S.result = await res.json();
+    renderResults(S.result);
+  } catch(e) {
+    clearInterval(timer);
+    showEmpty();
+    toast('Error: '+e.message, 'error');
+    console.error(e);
+  }
+}
+
+/* ── Display states ── */
+function showEmpty() {
+  document.getElementById('st-empty').style.display='flex';
+  document.getElementById('st-ldg').style.display='none';
+  document.getElementById('st-res').style.display='none';
+}
+function showLoading() {
+  document.getElementById('st-empty').style.display='none';
+  document.getElementById('st-ldg').style.display='flex';
+  document.getElementById('st-res').style.display='none';
+  document.getElementById('ld-step').textContent='Preprocessing image…';
+}
+
+/* ── Render results ── */
+function renderResults(r) {
+  document.getElementById('st-empty').style.display='none';
+  document.getElementById('st-ldg').style.display='none';
+  const c = document.getElementById('st-res');
+  c.style.display = 'block';
+  c.innerHTML = buildResultHTML(r);
+  // Animate confidence bars
+  setTimeout(()=>{
+    c.querySelectorAll('.cbar-f[data-p]').forEach(el=>{el.style.width=el.dataset.p+'%';});
+  }, 120);
+}
+
+function buildResultHTML(r) {
+  const mod = r.modality||'liver_ct';
+  const isL = mod==='liver_ct';
+  const risk = r.risk||'LOW';
+  const pt   = r.patient_info||{};
+  const plan = r.plan||S.plan;
+  const anns = r.annotation_images||{};
+
+  const accent  = isL ? 'var(--G)'  : 'var(--B)';
+  const accent2 = isL ? 'var(--G2)' : 'var(--B2)';
+  const sbgCol  = isL ? '#064e3b'   : '#1e3a5f';
+  const tc      = isL ? 'liver' : 'lung';
+  const vc = risk==='HIGH'?'var(--red)':risk==='MODERATE'?'var(--gold)':accent;
+
+  /* scan image titles */
+  const sts = isL
+    ? ['Axial CT — arterial phase','Grad-CAM heatmap','Segmentation mask','Coronal view']
+    : ['Axial CT — lung window','Grad-CAM heatmap','Nodule segmentation','Sagittal view'];
+  const sleg = isL
+    ? [['var(--G)','Liver'],['var(--red)','Tumour'],['var(--gold)','Vascular']]
+    : [['var(--B)','Nodule'],['var(--B2)','Lung'],['var(--gold)','Vessel']];
+
+  /* 4 scan boxes */
+  const scanBoxes = ['c1','c2','c3','c4'].map((k,i)=>{
+    const b64 = anns[k];
+    return `<div class="scan-box">
+      <div class="sb-lbl">${sts[i]}</div>
+      ${b64
+        ? `<img src="data:image/png;base64,${b64}" alt="${sts[i]}">`
+        : `<div class="scan-na">
+             <div class="scan-na-ic">🖼</div>
+             <div class="scan-na-t">Image not available</div>
+             <div class="scan-na-t" style="font-size:9px;color:#222">Backend may still be loading</div>
+           </div>`
+      }
+    </div>`;
+  }).join('');
+  const segLeg = sleg.map(([c,n])=>`<div class="sl-i"><div class="sl-d" style="background:${c}"></div>${n}</div>`).join('');
+
+  /* metrics */
+  const mc = isL
+    ? [[`${r.confidence_pct||0}%`,'Confidence',vc],[r.lirads||'—','LI-RADS','var(--red)'],[`${r.tumour_vol_cm3||'—'} cm³`,'Tumour vol',accent],[String(r.lesion_count||'—'),'Lesions',accent]]
+    : [[`${r.confidence_pct||0}%`,'Confidence',vc],[r.lung_rads||'—','Lung-RADS',vc],[`${r.malignancy_score||'—'}/5`,'Mal. score',vc],[`${r.inference_sec||'—'}s`,'Inference',accent]];
+  const metrics = mc.map(([v,l,c])=>`<div class="mcard"><div class="mv" style="color:${c}">${v}</div><div class="ml">${l}</div></div>`).join('');
+
+  /* findings */
+  let finds = `<div class="find-item ${tc}"><div class="fi-l">Primary finding</div>
+    <div class="fi-t"><strong>${r.primary_finding||'—'}</strong><br>AI confidence: ${r.confidence_pct||0}%</div></div>`;
+  if(isL){
+    finds += `<div class="find-item ${tc}"><div class="fi-l">LI-RADS assessment</div>
+      <div class="fi-t"><strong>${r.lirads||'—'}</strong> · Volume: ${r.tumour_vol_cm3||'—'} cm³ · Lesions: ${r.lesion_count||'—'} · L-T ratio: ${r.liver_tumour_pct||'—'}%</div></div>`;
+    finds += `<div class="find-item green"><div class="fi-l">Extrahepatic</div>
+      <div class="fi-t">No distant metastases on CT field of view. Vascular invasion assessment: MRI with hepatobiliary contrast required.</div></div>`;
+  } else {
+    finds += `<div class="find-item ${tc}"><div class="fi-l">Lung-RADS assessment</div>
+      <div class="fi-t"><strong>${r.lung_rads||'—'}</strong> — ${r.lung_rads_desc||''}<br>Malignancy score: ${r.malignancy_score||'—'}/5</div></div>`;
+    finds += `<div class="find-item green"><div class="fi-l">Pleural/mediastinum</div>
+      <div class="fi-t">No pleural effusion on CT. PET-CT recommended for LR-4/4X nodules.</div></div>`;
+  }
+
+  /* confidence bars */
+  const bc = [accent,'var(--muted2)','var(--G)','var(--B)'];
+  const bars = (r.differentials||[]).slice(0,4).map((d,i)=>{
+    const pct = Math.round((d.prob||0)*100*10)/10;
+    return `<div class="cbar-row"><div class="cbar-n">${d.name||'—'}</div>
+      <div class="cbar-t"><div class="cbar-f" data-p="${pct}" style="width:0%;background:${bc[i%bc.length]}"></div></div>
+      <div class="cbar-p">${pct}%</div></div>`;
+  }).join('');
+
+  /* staging */
+  const sg = r.staging||{};
+  const T=sg.T||'Tx', N=sg.N||'Nx', M=sg.M||'M0';
+  const sextra = isL
+    ? `<tr><td>BCLC Stage</td><td><strong>${sg.bclc||'—'}</strong></td><td>Barcelona Clinic Liver Cancer</td><td>LI-RADS ${sg.lirads||'—'}</td></tr>`
+    : `<tr><td>Lung-RADS</td><td><strong>${sg.lung_rads||'—'}</strong></td><td>ACR Lung-RADS v2022</td><td>Score ${r.malignancy_score||'—'}/5</td></tr>`;
+
+  /* recos */
+  const recos = (r.recommendations||[]).map(rc=>{
+    const pc = {P1:'p1',P2:'p2',P3:'p3'}[rc.priority]||'';
+    return `<tr><td class="${pc}">${rc.priority||'—'}</td><td>${rc.action||'—'}</td><td>${rc.timeframe||'—'}</td><td>${rc.dept||'—'}</td></tr>`;
+  }).join('');
+
+  /* nutrition */
+  const nt = r.nutrition||{};
+  const nutrH = nt.summary ? `<div class="rsec"><div class="rs-t">Supportive Care</div>
+    <div style="background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:10px;font-size:12px;color:var(--muted2);line-height:1.7">${nt.summary}</div>
+    <div class="ngrid">
+      <div class="ncard"><div class="nh" style="color:var(--G)">Recommended</div>${(nt.allow||[]).map(i=>`<div class="ni"><span style="color:var(--G)">+</span>${i}</div>`).join('')}</div>
+      <div class="ncard"><div class="nh" style="color:var(--red)">Avoid</div>${(nt.avoid||[]).map(i=>`<div class="ni"><span style="color:var(--red)">×</span>${i}</div>`).join('')}</div>
+    </div></div>` : '';
+
+  /* premium notice */
+  const upgH = plan==='free'
+    ? `<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:12px;padding:13px 17px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div style="font-size:12px;color:#fcd34d">⭐ Upgrade to Premium for full segmentation maps &amp; MDT pathway integration</div>
+       </div>` : '';
+
+  const pdfCls = `pdf-btn ${isL?'liver':'lung'}`;
+  const rhCls  = isL ? 'style="color:var(--G)"' : 'style="color:var(--B)"';
+
+  return `
+    ${upgH}
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
+      <div>
+        <div style="font-family:var(--syne);font-size:20px;font-weight:800;margin-bottom:3px">${pt.name||'Patient'}</div>
+        <div style="font-size:11px;color:var(--muted);font-family:var(--mono)">${r.case_id||'—'} · ${pt.study_date||'—'} · ${(r.model_name||'').replace(/_/g,' ')}</div>
+      </div>
+      <button class="${pdfCls}" id="pdf-btn" onclick="downloadPDF()">↓ Download PDF</button>
+    </div>
+
+    <div class="risk-banner ${risk}">
+      <div class="r-dot"></div>
+      <div class="r-txt">${r.primary_finding||'Analysis complete'} &nbsp;·&nbsp; Confidence: ${r.confidence_pct||0}%</div>
+    </div>
+
+    <div class="scans-section">
+      <div class="ss-title">AI-Annotated Scan Images</div>
+      <div class="scans-grid">${scanBoxes}</div>
+      <div class="seg-leg">${segLeg}</div>
+    </div>
+
+    <div class="metrics-row">${metrics}</div>
+
+    <div class="rsec"><div class="rs-t">Findings</div>${finds}</div>
+
+    <div class="rsec"><div class="rs-t">Differential Diagnosis</div>${bars}</div>
+
+    <div class="rsec"><div class="rs-t">Staging</div>
+      <table class="stbl">
+        <tr><th>Parameter</th><th>Value</th><th>Definition</th><th>Basis</th></tr>
+        <tr><td>T — Primary tumour</td><td><strong>${T}</strong></td><td>Size + local invasion</td><td>AI measurement</td></tr>
+        <tr><td>N — Regional nodes</td><td><strong>${N}</strong></td><td>Nodal status</td><td>CT imaging</td></tr>
+        <tr><td>M — Distant metastasis</td><td><strong>${M}</strong></td><td>Distant spread</td><td>CT field of view</td></tr>
+        ${sextra}
+        <tr class="fr"><td colspan="2"><span class="sbadge" style="background:${sbgCol}">${T} ${N} ${M}</span></td>
+          <td colspan="2" style="font-size:11px;color:var(--muted2)">${isL?'Hepatobiliary MDT required.':'Tissue biopsy required.'}</td></tr>
+      </table></div>
+
+    <div class="rsec"><div class="rs-t">Recommended Investigations &amp; Referrals</div>
+      <table class="rtbl">
+        <tr><th>Priority</th><th>Action</th><th>Timeframe</th><th>Dept</th></tr>
+        ${recos||'<tr><td colspan="4" style="color:var(--muted);padding:12px">No recommendations generated</td></tr>'}
+      </table></div>
+
+    ${nutrH}
+
+    <div style="margin-top:16px;padding:13px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);border-radius:12px;font-size:11px;color:var(--muted2);line-height:1.7">
+      <strong style="color:var(--gold)">Medical disclaimer:</strong> This AI report is a clinical decision-support tool only. All findings must be reviewed by a qualified clinician before any action.
+    </div>`;
+}
+
+/* ════════════════════════════════════════════════════
+   PDF GENERATION (client-side via pdfmake)
+   No backend required — works 100% in browser
+════════════════════════════════════════════════════ */
+function downloadPDF() {
+  if (!S.result) return;
+  const btn = document.getElementById('pdf-btn');
+  btn.textContent = '⏳ Generating…';
+  btn.disabled = true;
+
+  try {
+    const r    = S.result;
+    const pt   = r.patient_info || {};
+    const isL  = (r.modality === 'liver_ct');
+    const risk = r.risk || 'LOW';
+    const plan = r.plan || S.plan;
+    const themeColor = isL ? '#059669' : '#1d4ed8';
+    const headerBg   = isL ? '#064e3b' : '#1e3a5f';
+    const riskColor  = risk==='HIGH' ? '#A32D2D' : risk==='MODERATE' ? '#BA7517' : '#15803d';
+
+    // Build pdfmake document definition
+    const dd = {
+      pageSize: 'A4',
+      pageMargins: [40, 60, 40, 60],
+      defaultStyle: { font: 'Roboto', fontSize: 10, color: '#222' },
+      styles: {
+        hdr: { fillColor: headerBg, color: '#ffffff', bold: true, fontSize: 11 },
+        sec: { bold: true, fontSize: 9, color: themeColor, textTransform: 'uppercase', margin: [0,10,0,4] },
+        label: { fontSize: 8, color: '#888', textTransform: 'uppercase', characterSpacing: 0.5 },
+        val: { fontSize: 11, bold: true, color: '#111' },
+        find: { fontSize: 9, color: '#333', lineHeight: 1.5 },
+        small: { fontSize: 8, color: '#666' },
+      },
+      content: [
+
+        // ── Letterhead ──
+        {
+          canvas: [{ type:'rect', x:0, y:0, w:515, h:70, color: headerBg }]
+        },
+        { absolutePosition: {x:40, y:42},
+          columns: [
+            { text: [
+                { text: 'LIVARIX ', color:'#fff', fontSize:18, bold:true, font:'Roboto' },
+                { text: 'AI', color: isL ? '#34d399' : '#93c5fd', fontSize:18, bold:true },
+                '\n',
+                { text: `${isL?'Hepatic':'Pulmonary'} Oncology Centre  ·  NABH Accredited  ·  ISO 15189:2022`, color:'rgba(255,255,255,0.6)', fontSize:9 },
+              ]
+            },
+            { text: [
+                { text: 'AI-Assisted Oncology Report\n', fontSize:9, color:'rgba(255,255,255,0.7)' },
+                { text: `Report No: LVX-${r.case_id||'0000'}\n`, fontSize:9, color:'rgba(255,255,255,0.9)', bold:true },
+                { text: `${pt.report_date||new Date().toLocaleString()}`, fontSize:8, color:'rgba(255,255,255,0.5)' },
+              ], alignment:'right'
+            },
+          ]
+        },
+        { text:'\n\n\n' },
+
+        // ── Alert banner ──
+        {
+          table: { widths:['*'], body: [[{
+            text: `${risk} RISK  ·  ${r.primary_finding||'—'}  ·  Confidence: ${r.confidence_pct||0}%`,
+            bold:true, fontSize:9, color: riskColor,
+            fillColor: risk==='HIGH'?'#fef2f2':risk==='MODERATE'?'#fffbeb':'#f0fdf4',
+            margin:[10,8,10,8]
+          }]] },
+          margin: [0,0,0,14]
+        },
+
+        // ── Plan badge ──
+        plan==='premium' ? {
+          text: '⭐ PREMIUM REPORT',
+          fontSize:9, bold:true, color:'#b45309',
+          background:'#fef3c7', margin:[0,0,0,10]
+        } : {
+          text: 'Free Plan Report — upgrade for full segmentation maps & MDT integration',
+          fontSize:8, color:'#b45309', margin:[0,0,0,10], italics:true
+        },
+
+        // ── Patient info ──
+        { text: '01  PATIENT INFORMATION', style:'sec' },
+        {
+          table: {
+            widths: ['*','*','*'],
+            body: [
+              [
+                [{text:'Patient Name',style:'label'},{text:pt.name||'—',style:'val'}],
+                [{text:'Age / Sex',style:'label'},{text:`${pt.age||'—'} yr / ${pt.sex||'—'}`,style:'val'}],
+                [{text:'MRN',style:'label'},{text:pt.mrn||'—',style:'val'}],
+              ],
+              [
+                [{text:'Clinical History',style:'label'},{text:pt.clinical_history||'Not provided',style:'find'}],
+                [{text:'Study Date',style:'label'},{text:pt.study_date||'—',style:'val'}],
+                [{text:'Report Date',style:'label'},{text:pt.report_date||'—',style:'val'}],
+              ]
+            ]
+          },
+          layout: {
+            hLineColor: ()=>'#eee', vLineColor: ()=>'#eee',
+            paddingLeft: ()=>8, paddingRight: ()=>8,
+            paddingTop: ()=>6, paddingBottom: ()=>6,
+          },
+          margin:[0,0,0,14]
+        },
+
+        // ── Imaging technique ──
+        { text: '02  IMAGING TECHNIQUE', style:'sec' },
+        { text: isL
+            ? 'Contrast-enhanced CT abdomen. AI: SegResNet trained on LiTS Challenge (131 CT volumes). HU windowing [−150, 250], resampling 1.5×1.5×2.0 mm. Sliding-window inference, overlap 0.5.'
+            : 'Low-dose CT thorax. AI: 3D CNN trained on LIDC-IDRI (1,018 CT scans, 4-radiologist consensus). 64³ patch, 1mm isotropic. Malignancy regression + Lung-RADS classification.',
+          style:'find', margin:[0,0,0,14]
+        },
+
+        // ── Findings ──
+        { text: '03  RADIOLOGICAL FINDINGS', style:'sec' },
+        {
+          table: {
+            widths:['*'],
+            body: [
+              [{
+                text:[
+                  {text: isL?'Primary Lesion\n':'Primary Nodule\n', bold:true, color:themeColor, fontSize:8},
+                  {text: `${r.primary_finding||'—'}\nAI confidence: ${r.confidence_pct||0}%\n`, style:'find'},
+                  isL
+                    ? {text:`LI-RADS: ${r.lirads||'—'}  ·  Volume: ${r.tumour_vol_cm3||'—'} cm³  ·  Lesions: ${r.lesion_count||'—'}  ·  L-T ratio: ${r.liver_tumour_pct||'—'}%\n`, style:'find'}
+                    : {text:`Lung-RADS: ${r.lung_rads||'—'} — ${r.lung_rads_desc||''}  ·  Score: ${r.malignancy_score||'—'}/5\n`, style:'find'},
+                ],
+                margin:[8,8,8,8],
+                fillColor: isL ? '#f0fdf4' : '#eff6ff',
+              }]
+            ]
+          },
+          layout:{hLineColor:()=>themeColor,vLineColor:()=>themeColor},
+          margin:[0,0,0,14]
+        },
+
+        // ── AI Metrics ──
+        { text: '04  AI ANALYSIS METRICS', style:'sec' },
+        {
+          columns: isL
+            ? [
+                {text:[{text:'Confidence\n',style:'label'},{text:`${r.confidence_pct||0}%`,bold:true,fontSize:16,color:themeColor}]},
+                {text:[{text:'LI-RADS\n',style:'label'},{text:r.lirads||'—',bold:true,fontSize:16,color:'#dc2626'}]},
+                {text:[{text:'Tumour Volume\n',style:'label'},{text:`${r.tumour_vol_cm3||'—'} cm³`,bold:true,fontSize:14,color:themeColor}]},
+                {text:[{text:'Lesion Count\n',style:'label'},{text:String(r.lesion_count||'—'),bold:true,fontSize:16,color:themeColor}]},
+              ]
+            : [
+                {text:[{text:'Confidence\n',style:'label'},{text:`${r.confidence_pct||0}%`,bold:true,fontSize:16,color:themeColor}]},
+                {text:[{text:'Lung-RADS\n',style:'label'},{text:r.lung_rads||'—',bold:true,fontSize:16,color:'#dc2626'}]},
+                {text:[{text:'Mal. Score\n',style:'label'},{text:`${r.malignancy_score||'—'}/5`,bold:true,fontSize:16,color:themeColor}]},
+                {text:[{text:'Inference\n',style:'label'},{text:`${r.inference_sec||'—'}s`,bold:true,fontSize:14,color:themeColor}]},
+              ],
+          margin:[0,4,0,14]
+        },
+
+        // ── Differentials ──
+        { text: '05  DIFFERENTIAL DIAGNOSIS', style:'sec' },
+        {
+          table: {
+            widths:['*', 60, 40],
+            body: [
+              [{text:'Diagnosis',bold:true,fontSize:8},{text:'Confidence Bar',bold:true,fontSize:8},{text:'Prob.',bold:true,fontSize:8}],
+              ...(r.differentials||[]).slice(0,4).map(d=>[
+                {text:d.name||'—', fontSize:9},
+                {
+                  canvas:[
+                    {type:'rect',x:0,y:4,w:60,h:8,color:'#eee'},
+                    {type:'rect',x:0,y:4,w:Math.round((d.prob||0)*60),h:8,color:themeColor},
+                  ]
+                },
+                {text:`${Math.round((d.prob||0)*100)}%`, fontSize:9, alignment:'right'},
+              ])
+            ]
+          },
+          layout:{hLineColor:()=>'#eee',vLineColor:()=>'#eee',paddingLeft:()=>6,paddingRight:()=>6,paddingTop:()=>5,paddingBottom:()=>5},
+          margin:[0,0,0,14]
+        },
+
+        // ── Staging ──
+        { text: '06  STAGING', style:'sec' },
+        {
+          table: {
+            widths:[100,60,'*','*'],
+            body: [
+              [{text:'Parameter',bold:true,fontSize:8},{text:'Value',bold:true,fontSize:8},{text:'Definition',bold:true,fontSize:8},{text:'Basis',bold:true,fontSize:8}],
+              ['T — Primary tumour',{text:r.staging?.T||'Tx',bold:true},'Size + local invasion','AI measurement'],
+              ['N — Regional nodes',{text:r.staging?.N||'Nx',bold:true},'Nodal status','CT imaging'],
+              ['M — Distant spread',{text:r.staging?.M||'M0',bold:true},'Distant metastasis','CT field'],
+              isL
+                ? [{text:'BCLC Stage',bold:true},{text:r.staging?.bclc||'—',bold:true},'Barcelona Clinic',`LI-RADS ${r.staging?.lirads||'—'}`]
+                : [{text:'Lung-RADS',bold:true},{text:r.staging?.lung_rads||'—',bold:true},'ACR v2022',`Score ${r.malignancy_score||'—'}/5`],
+              [{text:`${r.staging?.T||'Tx'} ${r.staging?.N||'Nx'} ${r.staging?.M||'M0'}`,bold:true,fontSize:10,color:'#fff',fillColor:headerBg},{},{},{text:isL?'Hepatobiliary MDT required.':'Tissue biopsy required.',fontSize:8,color:'#fff',fillColor:headerBg}],
+            ]
+          },
+          layout:{hLineColor:()=>'#eee',vLineColor:()=>'#eee',paddingLeft:()=>6,paddingRight:()=>6,paddingTop:()=>5,paddingBottom:()=>5},
+          margin:[0,0,0,14]
+        },
+
+        // ── Recommendations ──
+        { text: '07  RECOMMENDED INVESTIGATIONS & REFERRALS', style:'sec' },
+        {
+          table: {
+            widths:[50,'*',80,80],
+            body: [
+              [{text:'Priority',bold:true,fontSize:8},{text:'Action',bold:true,fontSize:8},{text:'Timeframe',bold:true,fontSize:8},{text:'Dept',bold:true,fontSize:8}],
+              ...(r.recommendations||[]).map(rc=>[
+                {text:rc.priority||'—', fontSize:9,
+                 color:rc.priority==='P1'?'#dc2626':rc.priority==='P2'?'#d97706':'#16a34a',
+                 bold:true},
+                {text:rc.action||'—', fontSize:9},
+                {text:rc.timeframe||'—', fontSize:9},
+                {text:rc.dept||'—', fontSize:9},
+              ])
+            ]
+          },
+          layout:{hLineColor:()=>'#eee',vLineColor:()=>'#eee',paddingLeft:()=>6,paddingRight:()=>6,paddingTop:()=>5,paddingBottom:()=>5},
+          margin:[0,0,0,14]
+        },
+
+        // ── Nutrition ──
+        ...(r.nutrition?.summary ? [
+          { text: '08  SUPPORTIVE CARE GUIDELINES', style:'sec' },
+          { text: r.nutrition.summary, style:'find', margin:[0,0,0,8] },
+          {
+            columns: [
+              {
+                text:[
+                  {text:'Recommended\n',bold:true,fontSize:8,color:'#16a34a'},
+                  ...(r.nutrition.allow||[]).map(i=>({text:`+ ${i}\n`,fontSize:8,color:'#555'})),
+                ]
+              },
+              {
+                text:[
+                  {text:'Strictly Avoid\n',bold:true,fontSize:8,color:'#dc2626'},
+                  ...(r.nutrition.avoid||[]).map(i=>({text:`× ${i}\n`,fontSize:8,color:'#555'})),
+                ]
+              }
+            ],
+            margin:[0,0,0,14]
+          }
+        ] : []),
+
+        // ── Signature ──
+        { text: '09  REPORTING & VALIDATION', style:'sec' },
+        {
+          columns: [
+            {
+              text:[
+                {text:'Ashvant Narayan Y\n',bold:true,fontSize:11},
+                {text:'Founder · AI/ML Engineer, Livarix AI\n',fontSize:9,color:'#666'},
+                {text:`Digitally generated ${pt.report_date||'—'}`,fontSize:8,color:'#aaa'},
+              ]
+            },
+            {
+              text:[
+                {text:`AI Model — ${r.model_name||'Livarix AI'}\n`,bold:true,fontSize:11},
+                {text:`${isL?'LiTS Challenge (131 CT volumes)':'LIDC-IDRI (1,018 CT scans)'}\n`,fontSize:9,color:'#666'},
+                {text:`${isL?'Dice liver '+r.model_metrics?.dice_liver+' · tumour '+r.model_metrics?.dice_tumour:'Val acc '+r.model_metrics?.val_acc}\nCase: ${r.case_id||'—'}`,fontSize:8,color:'#aaa'},
+              ]
+            }
+          ],
+          margin:[0,0,0,14]
+        },
+
+        // ── Disclaimer ──
+        {
+          table:{ widths:['*'], body:[[{
+            text:'Medical Disclaimer: This report is generated by Livarix AI (v1.0), an AI-assisted clinical decision-support tool. It must be reviewed and validated by a qualified radiologist or oncologist before any clinical action. AI findings do not replace direct clinical examination or physician judgment. Not for self-diagnosis.',
+            fontSize:8, color:'#78350f', fillColor:'#fff9ed', margin:[10,8,10,8]
+          }]] },
+          layout:{hLineColor:()=>'#f59e0b',vLineColor:()=>'#f59e0b'},
+        }
+
+      ],
+      footer: (page, pages) => ({
+        columns:[
+          {text:`Livarix AI · ${isL?'Hepatic':'Pulmonary'} Oncology · LVX-${r.case_id||'0000'}`,fontSize:8,color:'#aaa'},
+          {text:`ISO 15189 · HIPAA Compliant · AES-256`,fontSize:8,color:'#aaa',alignment:'center'},
+          {text:`Page ${page} of ${pages}`,fontSize:8,color:'#aaa',alignment:'right'},
+        ],
+        margin:[40,10,40,0]
+      }),
+    };
+
+    pdfMake.createPdf(dd).download(
+      `Livarix_${(pt.name||'report').replace(/\s+/g,'_')}_${r.case_id||'rpt'}.pdf`
+    );
+    toast('PDF downloaded successfully', 'success');
+  } catch(e) {
+    toast('PDF error: ' + e.message, 'error');
+    console.error(e);
+  } finally {
+    const btn = document.getElementById('pdf-btn');
+    if(btn){ btn.textContent = '↓ Download PDF'; btn.disabled = false; }
+  }
+}
+
+/* ── Toast ── */
+function toast(msg, type='info') {
+  const el=document.getElementById('toast');
+  const ic=document.getElementById('t-ic');
+  const tx=document.getElementById('t-msg');
+  const icons={info:'ℹ',success:'✓',warn:'⚠',error:'✕'};
+  const cols={info:'var(--G)',success:'var(--G2)',warn:'var(--gold)',error:'var(--red)'};
+  ic.textContent=icons[type]||'ℹ'; ic.style.color=cols[type];
+  tx.textContent=msg;
+  el.classList.add('on');
+  setTimeout(()=>el.classList.remove('on'),4500);
+}
+</script>
+</body>
+</html>
